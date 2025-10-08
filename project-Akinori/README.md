@@ -2,5 +2,5 @@
 
 Aqui muestro el funcionamiento del LED enviando un mensaje de SOS
 
-![No imagen](img/blink_led.png)
+![Ejercicio 1](img/SOS-ESP32.png)
 
