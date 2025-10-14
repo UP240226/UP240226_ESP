@@ -2,9 +2,11 @@
 #include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
 #include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
 #include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
+// Use the built-in macro for ms to ticks conversion
+// Use the official FreeRTOS macro pdMS_TO_TICKS instead of redefining it.
 
 // Definición de los pines para el LED y el botón
-#define LED    GPIO_NUM_23
+#define LED GPIO_NUM_23
 #define BUTTON GPIO_NUM_22
 
  // Duraciones en milisegundos para el código Morse
@@ -15,17 +17,17 @@
 
         static void dot(void)
         {
-            gpio_set_level(LED_GPIO, 1);
-            vTaskDelay((DOT_MS) / portTICK_PERIOD_MS);
-            gpio_set_level(LED_GPIO, 0);
+            gpio_set_level(LED, 1);
+            vTaskDelay(pdMS_TO_TICKS(DOT_MS));
+            gpio_set_level(LED, 0);
             vTaskDelay(pdMS_TO_TICKS(BETWEEN_SYMBOLS_MS));
         }
 
         static void dash(void)
         {
-            gpio_set_level(LED_GPIO, 1);
-            vTaskDelay((DASH_MS) / portTICK_PERIOD_MS);
-            gpio_set_level(LED_GPIO, 0);
+            gpio_set_level(LED, 1);
+            vTaskDelay(pdMS_TO_TICKS(DASH_MS));
+            gpio_set_level(LED, 0);
             vTaskDelay(pdMS_TO_TICKS(BETWEEN_SYMBOLS_MS));
         }
 
@@ -33,15 +35,13 @@
         {
             // S: ...
             for (int i = 0; i < 3; ++i) dot();
-            vTaskDelay((BETWEEN_LETTERS_MS) / portTICK_PERIOD_MS);
+            vTaskDelay(pdMS_TO_TICKS(BETWEEN_LETTERS_MS));
             // O: ---
             for (int i = 0; i < 3; ++i) dash();
             vTaskDelay(pdMS_TO_TICKS(BETWEEN_LETTERS_MS));
             // S: ...
             for (int i = 0; i < 3; ++i) dot();
         }
-
-
 
 void app_main(void)
 {
@@ -67,6 +67,7 @@ void app_main(void)
         if(status == false)
         {
             gpio_set_level(LED, 1); // Enciende el LED
+            sos(); // Llama a la función sos cuando se presiona el botón
         }
         else
         {
@@ -80,4 +81,48 @@ void app_main(void)
        
     }
     
+}
+
+bool doubleClick(void)
+{
+    const TickType_t debounceDelay = pdMS_TO_TICKS(50); // Tiempo de rebote
+    const TickType_t doubleClicktimeout = pdMS_TO_TICKS(400); // Tiempo máximo entre clics    
+    TickType_t startTime;
+
+    //Espera la primera pulsasion 
+    while (gpio_get_level (BUTTON) == 1)
+    {
+        vTaskDelay (pdMS_TO_TICKS(10));
+    }
+
+    //Pequeño delay para debounce
+    vTaskDelay(debounceDelay);
+
+    //Verifica si se soltó el botón
+    while (gpio_get_level (BUTTON) == 0)
+    {
+        vTaskDelay (pdMS_TO_TICKS(10));
+    }
+
+    //Marca ek tiempo de la primera pulsación
+    startTime = xTaskGetTickCount();
+    
+    //Esperar la segunda pulsación dentro del tiempo permitido
+    while ((xTaskGetTickCount() - startTime) < doubleClicktimeout)
+    {
+        if (gpio_get_level (BUTTON) == 0) //Si se detecta la segunda pulsación
+        {
+            //Pequeño delay para debounce
+            vTaskDelay(debounceDelay);
+
+            //Verifica si se soltó el botón
+            while (gpio_get_level (BUTTON) == 0)
+            {
+                vTaskDelay (pdMS_TO_TICKS(10));
+            }
+            return true; //Doble clic detectado
+        }
+        vTaskDelay(pdMS_TO_TICKS(10)); //Pequeño retardo para evitar uso intensivo de CPU
+    }
+    return false; // No se detectó doble clic
 }
