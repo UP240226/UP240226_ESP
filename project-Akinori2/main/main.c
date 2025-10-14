@@ -64,13 +64,15 @@ void app_main(void)
         int status = gpio_get_level(BUTTON);
 
         // Si el botón está presionado (nivel bajo)
-        if(status == false)
+        if(status == true)
         {
+            printf("Botón presionado\n");
             gpio_set_level(LED, 1); // Enciende el LED
             sos(); // Llama a la función sos cuando se presiona el botón
         }
         else
         {
+            printf("Soltado\n");
             gpio_set_level(LED, 0); // Apaga el LED
         }
 
