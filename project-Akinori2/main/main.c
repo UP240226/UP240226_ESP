@@ -2,12 +2,10 @@
 #include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
 #include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
 #include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
-// Use the built-in macro for ms to ticks conversion
-// Use the official FreeRTOS macro pdMS_TO_TICKS instead of redefining it.
 
 // Definición de los pines para el LED y el botón
 #define LED GPIO_NUM_23
-#define BUTTON GPIO_NUM_22
+#define BUTTON GPIO_NUM_19
 
  // Duraciones en milisegundos para el código Morse
         #define DOT_MS 200
@@ -43,6 +41,7 @@
             for (int i = 0; i < 3; ++i) dot();
         }
 
+        
 void app_main(void)
 {
     // Reinicia la configuración de los pines LED y botón
@@ -72,59 +71,14 @@ void app_main(void)
         }
         else
         {
-            printf("Soltado\n");
+            printf("...\n");
             gpio_set_level(LED, 0); // Apaga el LED
         }
 
         // Espera 20 ms antes de repetir
-        vTaskDelay(pdMS_TO_TICKS(20)) ;
-
-                
-       
+        vTaskDelay(pdMS_TO_TICKS(100)) ;
+  
     }
     
 }
 
-bool doubleClick(void)
-{
-    const TickType_t debounceDelay = pdMS_TO_TICKS(50); // Tiempo de rebote
-    const TickType_t doubleClicktimeout = pdMS_TO_TICKS(400); // Tiempo máximo entre clics    
-    TickType_t startTime;
-
-    //Espera la primera pulsasion 
-    while (gpio_get_level (BUTTON) == 1)
-    {
-        vTaskDelay (pdMS_TO_TICKS(10));
-    }
-
-    //Pequeño delay para debounce
-    vTaskDelay(debounceDelay);
-
-    //Verifica si se soltó el botón
-    while (gpio_get_level (BUTTON) == 0)
-    {
-        vTaskDelay (pdMS_TO_TICKS(10));
-    }
-
-    //Marca ek tiempo de la primera pulsación
-    startTime = xTaskGetTickCount();
-    
-    //Esperar la segunda pulsación dentro del tiempo permitido
-    while ((xTaskGetTickCount() - startTime) < doubleClicktimeout)
-    {
-        if (gpio_get_level (BUTTON) == 0) //Si se detecta la segunda pulsación
-        {
-            //Pequeño delay para debounce
-            vTaskDelay(debounceDelay);
-
-            //Verifica si se soltó el botón
-            while (gpio_get_level (BUTTON) == 0)
-            {
-                vTaskDelay (pdMS_TO_TICKS(10));
-            }
-            return true; //Doble clic detectado
-        }
-        vTaskDelay(pdMS_TO_TICKS(10)); //Pequeño retardo para evitar uso intensivo de CPU
-    }
-    return false; // No se detectó doble clic
-}
