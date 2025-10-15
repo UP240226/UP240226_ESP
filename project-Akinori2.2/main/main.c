@@ -48,8 +48,9 @@
     TickType_t startTime;
 
     // Espera la primera pulsación
-    while (gpio_get_level(RDY) == 1)
+    while (gpio_get_level(BUTTON) == 1)
     {
+        printf("Primer pulsación");
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 
@@ -57,7 +58,7 @@
     vTaskDelay(debounceDelay);
 
     // Verifica si se soltó el botón
-    while (gpio_get_level(RDY) == 0)
+    while (gpio_get_level(BUTTON) == 0)
     {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -69,15 +70,15 @@
     while ((xTaskGetTickCount() - startTime) < doubleClickTimeout)
     {
 
-        if (gpio_get_level(RDY) == 0)
+        if (gpio_get_level(BUTTON) == 0)
         {
             // Espera a que se suelte el botón nuevamente
             vTaskDelay(debounceDelay);
-            while (gpio_get_level(RDY) == 0)
+            while (gpio_get_level(BUTTON) == 0)
             {
                 vTaskDelay(pdMS_TO_TICKS(10));
             }
-
+            printf("Doble clic detectado\n");
             ESP_LOGI("BUTTON", "Double click detected");
             return true;
         }
