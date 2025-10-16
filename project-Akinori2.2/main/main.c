@@ -1,7 +1,8 @@
-#include "sdkconfig.h"
+#include <stdio.h> // Librería estándar de entrada y salida
 #include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
 #include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
 #include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
+#include "esp_log.h" // Librería necesaria para usar el sistema de logs de ESP-IDF
 
 // Definición de los pines para el LED y el botón
 #define LED GPIO_NUM_23
