@@ -10,7 +10,7 @@
 
  // Duraciones en milisegundos para el código Morse
         #define DOT_MS 200
-        #define DASH_MS 500
+        #define DASH_MS 500 
         #define BETWEEN_SYMBOLS_MS 200
         #define BETWEEN_LETTERS_MS 500
 
@@ -51,8 +51,8 @@
     // Espera la primera pulsación
     while (gpio_get_level(BUTTON) == 1)
     {
-        printf("Primer pulsación");
-        vTaskDelay(pdMS_TO_TICKS(10));
+        printf("Primer pulsación\n");
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
     // Pequeño delay para debounce
@@ -61,7 +61,8 @@
     // Verifica si se soltó el botón
     while (gpio_get_level(BUTTON) == 0)
     {
-        vTaskDelay(pdMS_TO_TICKS(10));
+        printf("Espera a que se suelte el botón\n");
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
     // Marca el tiempo de la primera pulsación
@@ -74,6 +75,7 @@
         if (gpio_get_level(BUTTON) == 0)
         {
             // Espera a que se suelte el botón nuevamente
+            printf("Segunda pulsación detectada\n");
             vTaskDelay(debounceDelay);
             while (gpio_get_level(BUTTON) == 0)
             {
@@ -116,7 +118,7 @@ void app_main(void)
         {
             printf("Botón presionado\n");
             gpio_set_level(LED, 1); // Enciende el LED
-            sos(); // Llama a la función sos cuando se presiona el botón
+            doubleClick(); // Llama a la función sos cuando se presiona el botón
         }
         else
         {
