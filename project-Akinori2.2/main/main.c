@@ -62,7 +62,7 @@
     while (gpio_get_level(BUTTON) == 0)
     {
         printf("Espera a que se suelte el botón\n");
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 
     // Marca el tiempo de la primera pulsación
@@ -77,9 +77,10 @@
             // Espera a que se suelte el botón nuevamente
             printf("Segunda pulsación detectada\n");
             vTaskDelay(debounceDelay);
+            sos();
             while (gpio_get_level(BUTTON) == 0)
             {
-                vTaskDelay(pdMS_TO_TICKS(10));
+                vTaskDelay(pdMS_TO_TICKS(100));
             }
             printf("Doble clic detectado\n");
             ESP_LOGI("BUTTON", "Double click detected");
@@ -118,7 +119,7 @@ void app_main(void)
         {
             printf("Botón presionado\n");
             gpio_set_level(LED, 1); // Enciende el LED
-            doubleClick(); // Llama a la función sos cuando se presiona el botón
+            doubleClick(); // Llama a la función doubleClick cuando se presiona el botón
         }
         else
         {
