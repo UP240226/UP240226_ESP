@@ -1,4 +1,4 @@
-# BLINK LED
+# BLINK LED con click
 
 Aqui muestro el funcionamiento del LED enviando un mensaje de SOS activado por un botón
 
