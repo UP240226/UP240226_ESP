@@ -1,11 +1,6 @@
-# BLINK LED
+# BLINK LED doubleClick
 
-Aqui muestro el funcionamiento del LED enviando un mensaje de SOS
+Aqui muestro el funcionamiento del LED enviando un mensaje de SOS con dos clicks
 
-![Ejercicio 1](img/SOS-ESP32.png)
+![Ejercicio 2.2](img/doubleClickfoto.png)
 
-# BLINK LED PROTOBOARD
-
-Aqui muestro el funcionamiento del LED externo conectado a la protoboard con el ESP-32 
-
-![Ejercicio 2](img/SOSLED1.png)

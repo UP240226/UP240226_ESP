@@ -1,4 +1,4 @@
-#include "sdkconfig.h"
+#include "sdkconfig.h" // configuración
 #include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
 #include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
 #include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
