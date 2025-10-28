@@ -1,85 +1,79 @@
-#include <stdio.h> // Librería estándar de entrada y salida
-#include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
-#include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
-#include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
-#include "esp_log.h" // Librería necesaria para usar el sistema de logs de ESP-IDF
+#include <stdio.h> // Incluye la biblioteca estándar de entrada/salida
+#include "freertos/FreeRTOS.h" // Incluye la biblioteca principal de FreeRTOS
+#include "driver/gpio.h" // Incluye el controlador para GPIO
+#include "driver/ledc.h" // Incluye el controlador para LEDC (PWM)
 
-// Definición de los pines para el LED y el botón
-#define LED GPIO_NUM_23
-#define BUTTON GPIO_NUM_19
-#define INT_PIN GPIO_NUM_5 // Define el pin GPIO5 como pin de interrupción
-uint16_t int_count = 0; // Variable para contar interrupciones
-bool button_state = false; // Bandera para indicar si el botón fue presionado
+#define AIN1 GPIO_NUM_5
+#define AIN2 GPIO_NUM_22
+#define PWMA GPIO_NUM_19
 
-
- // Duraciones en milisegundos para el código Morse
-        #define DOT_MS 200
-        #define DASH_MS 500 
-        #define BETWEEN_SYMBOLS_MS 200
-        #define BETWEEN_LETTERS_MS 500
-
-        static void dot(void)
-        {
-            gpio_set_level(LED, 1);
-            vTaskDelay(pdMS_TO_TICKS(DOT_MS));
-            gpio_set_level(LED, 0);
-            vTaskDelay(pdMS_TO_TICKS(BETWEEN_SYMBOLS_MS));
-        }
-
-        static void dash(void)
-        {
-            gpio_set_level(LED, 1);
-            vTaskDelay(pdMS_TO_TICKS(DASH_MS));
-            gpio_set_level(LED, 0);
-            vTaskDelay(pdMS_TO_TICKS(BETWEEN_SYMBOLS_MS));
-        }
-
-        static void sos(void)
-        {
-            // S: ...
-            for (int i = 0; i < 3; ++i) dot();
-            vTaskDelay(pdMS_TO_TICKS(BETWEEN_LETTERS_MS));
-            // O: ---
-            for (int i = 0; i < 3; ++i) dash();
-            vTaskDelay(pdMS_TO_TICKS(BETWEEN_LETTERS_MS));
-            // S: ...
-            for (int i = 0; i < 3; ++i) dot();
-        }
-        
-
-
-// Manejador de la interrupción externa
-static void IRAM_ATTR gpio_isr_handler(void *arg)
+esp_err_t configureGpio(void)
 {
-    int_count++; // Incrementa el contador de interrupciones
-    button_state = true; // Indica que el botón fue presionado
-    vTaskDelay(pdMS_TO_TICKS(10)); // Pequeña demora para evitar rebotes
+    // Configure GPIO pins for input and output modes
+    gpio_reset_pin(AIN1);   // Reset AIN1 pin
+    gpio_reset_pin(AIN2);   // Reset AIN2 pin
+    gpio_reset_pin(PWMA);   // Reset PWMA pin
+    gpio_set_direction(AIN1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(AIN2, GPIO_MODE_OUTPUT);
+    gpio_set_direction(PWMA, GPIO_MODE_OUTPUT);
+    return ESP_OK; // Return success
 }
 
-// Función principal del programa
-void app_main(void)
+void setupPWM(void)
 {
-    gpio_reset_pin(INT_PIN); // Resetea la configuración previa del pin
-    gpio_set_direction(INT_PIN, GPIO_MODE_INPUT); // Configura el pin como entrada
+    // Configuración del canal PWM
+    ledc_timer_config_t ledc_timer = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .duty_resolution = LEDC_TIMER_8_BIT, // Resolución de 8 bits
+        .timer_num = LEDC_TIMER_0,
+        .freq_hz = 5000, // Frecuencia de 5 kHz
+        .clk_cfg = LEDC_AUTO_CLK,
+        .deconfigure = false // No desconfigurar el temporizador
+    };
+    ledc_timer_config(&ledc_timer);
 
-    gpio_set_pull_mode(INT_PIN, GPIO_PULLUP_ONLY); // Activa resistencia pull-up interna
-    gpio_set_intr_type(INT_PIN, GPIO_INTR_POSEDGE); // Configura interrupción por flanco de subida
+    // Configuración del canal A
+    ledc_channel_config_t ledc_channel_A = {
+        .gpio_num = PWMA, // Primero el GPIO
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_0,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_0,
+        .duty = 0,
+        .hpoint = 0,
+        .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD, // Deshabilitar el modo de sueño
+        .flags = {
+            .output_invert = 0 // No invertir la salida
+        }};
+    ledc_channel_config(&ledc_channel_A);
+    ledc_fade_func_install(0); // Instala la función de desvanecimiento
+}
 
-    gpio_install_isr_service(0); // Instala el servicio de ISR para GPIO
-    gpio_isr_handler_add(INT_PIN, gpio_isr_handler, NULL); // Registra el manejador de la interrupción
+void app_main(void) // Función principal de la aplicación
+{
+    configureGpio(); // Configura los pines GPIO
+    setupPWM(); // Configura el PWM 
 
-    gpio_intr_enable(INT_PIN); // Habilita la interrupción en el pin
+    gpio_set_level(AIN1, 1); // Establece AIN1 en alto
+    gpio_set_level(AIN2, 0); // Establece AIN2 en
 
-    while(1) // Bucle principal
+
+    while(1) // Bucle infinito
     {
-        if(int_count > 3) // Si se detectó una pulsación
+        // Incrementa el duty cycle de 0 a 254
+        for(int i = 0; i < 255; i++)
         {
-            printf("Interrupción detectada\n");
-            printf("%d\n", int_count); // Muestra el contador por consola
-            button_state = false; // Reinicia la bandera
-            sos(); // Envía el mensaje SOS en código Morse
-            int_count = 0; // Reinicia el contador
+            ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, i, 0); // Actualiza el duty cycle
+            printf("Duty: %d\n", i); // Imprime el valor actual del duty cycle
+            vTaskDelay(pdMS_TO_TICKS(10)); // Espera 10 ms
         }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Espera 100 ms antes de repetir
+
+        // Decrementa el duty cycle de 255 a 1
+        for(int i = 255; i > 0; i--)
+        {
+            ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, i, 0);     // Actualiza el duty cycle
+            printf("Duty: %d\n", i); // Imprime el valor actual del duty cycle
+            vTaskDelay(pdMS_TO_TICKS(150)); // Espera 10 ms
+        }
     }
 }
