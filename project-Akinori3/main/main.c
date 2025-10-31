@@ -1,13 +1,11 @@
 #include <stdio.h> // Librería estándar de entrada y salida
 #include "freertos/FreeRTOS.h" // Librería necesaria para usar FreeRTOS
-#include "freertos/task.h" // Librería necesaria para usar las tareas de FreeRTOS
 #include "driver/gpio.h" // Librería necesaria para manejar los pines GPIO
 #include "esp_log.h" // Librería necesaria para usar el sistema de logs de ESP-IDF
+#include "inttypes.h" // Incluye definiciones de tipos enteros
 
-// Definición de los pines para el LED y el botón
 #define LED GPIO_NUM_23
-#define BUTTON GPIO_NUM_19
-#define INT_PIN GPIO_NUM_5 // Define el pin GPIO5 como pin de interrupción
+#define INT_PIN GPIO_NUM_19 // Define el pin GPIO5 como pin de interrupción
 uint16_t int_count = 0; // Variable para contar interrupciones
 bool button_state = false; // Bandera para indicar si el botón fue presionado
 
@@ -53,7 +51,7 @@ static void IRAM_ATTR gpio_isr_handler(void *arg)
 {
     int_count++; // Incrementa el contador de interrupciones
     button_state = true; // Indica que el botón fue presionado
-    vTaskDelay(pdMS_TO_TICKS(10)); // Pequeña demora para evitar rebotes
+    //vTaskDelay(pdMS_TO_TICKS(100)); // Pequeña demora para evitar rebotes
 }
 
 // Función principal del programa
@@ -72,14 +70,14 @@ void app_main(void)
 
     while(1) // Bucle principal
     {
-        if(int_count > 3) // Si se detectó una pulsación
-        {
-            printf("Interrupción detectada\n");
-            printf("%d\n", int_count); // Muestra el contador por consola
-            button_state = false; // Reinicia la bandera
-            sos(); // Envía el mensaje SOS en código Morse
-            int_count = 0; // Reinicia el contador
-        }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Espera 100 ms antes de repetir
+         if(int_count > 3) // Si se detectó una pulsación
+         {
+             printf("Interrupción detectada\n");
+             printf("%d\n", int_count); // Muestra el contador por consola
+             button_state = false; // Reinicia la bandera
+             sos(); // Envía el mensaje SOS en código Morse
+             int_count = 0; // Reinicia el contador
+         }
+        vTaskDelay(pdMS_TO_TICKS(300)); // Espera 300 ms antes de repetir
     }
 }
